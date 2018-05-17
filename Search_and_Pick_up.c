@@ -21,68 +21,69 @@
 task main
 {
   int ISeeColor;
-  int ISeeObject;
+  int ISeeObject, ISeeObject_new;
 	setColorMode(colorDetector, colorTypeRGB_Hue_Reflected);
 	setDistanceMaxRange(distanceMM, 500);
 
 	resetMotorEncoder(leftMotor);		//Reset the current position in the motor encoder to zero.
 	resetMotorEncoder(rightMotor);
-	resetMotorEncoder(armMotor); //Take current position as zero.openLoop, encoder
-	resetMotorEncoder(clawMotor);
+	resetMotorEncoder(armMotor); //Take current position as zero. Arm down
+	resetMotorEncoder(clawMotor); // claw starts open
 
   wait1Msec(50); //Small delay
-  // rotate, looking for object
 
-
-
+	// slowly rotate, looking for object
+	setMotorSpeed(leftMotor, 30);
+	setMotorSpeed(rightMotor, -30);
 
 
 	ISeeColor= getColorHue(colorDetector);
 	ISeeObject = getDistanceValue(distanceMM);
-	// if sees something, move toward it.
-	//setMotorSpeed(leftMotor, 50);
-	//setMotorSpeed(rightMotor, -50);
+
   while(ISeeObject > 400)
 	  {
-      wait1Msec(500);
+      wait1Msec(5);
       ISeeObject = getDistanceValue(distanceMM);
       displayTextLine(1, "LM: %d, RM: %d", getMotorEncoder(leftMotor), getMotorEncoder(rightMotor));
 		  displayTextLine(2," Distance: %d",ISeeObject);
-	      // count rotations
+	      // note rotation count
 	 }
 	 // stop rotating when object detected
+	 // note heading from gyro
+	setMotorSpeed(leftMotor, 0);
+	setMotorSpeed(rightMotor, 0);
 
-	// check that we are still moving toward object
+	// TODO: check that we are still moving toward object
 	//   - stop
 	//   - turn 10 degress left - take reading
 	//   - turn 10 degress right - take reading       |
 	//   - turn 10 degress right - take reading         /
 	//  - turn and move towards greatest reading
-	setMotorSpeed(leftMotor, 0);
-	setMotorSpeed(rightMotor, 0);
-	wait1Msec(500); //Small delay to allow motors time to start moving before checking
-//stopAllTasks();  // exut
 
-	//getMotorMoving - Flag to indiciate if the motor is moving (True - Moving / False - Stopped)
-	//Loop while either motor is still moving (Left OR Right is still moving)
-	//while(getMotorMoving(leftMotor) || getMotorMoving(rightMotor))
-	//while ((ISeeColor < 60) || (ISeeColor > 120))
+	wait1Msec(500);
+
+  // move toward object
 	setMotorSpeed(leftMotor, 50);
 	setMotorSpeed(rightMotor, 50);
-	// while distance is decreasing - keep moving forward - if distance increases (lost target) stop and aquire target again
+
 	while(ISeeObject > 85)
 	{
-
-
-		//Print
+    //Display
 		displayTextLine(1, "LM: %d, RM: %d", getMotorEncoder(leftMotor), getMotorEncoder(rightMotor));
 		displayTextLine(2," Distance: %d",ISeeObject);
 		wait1Msec(5);
-		ISeeObject = getDistanceValue(distanceMM);
+		ISeeObject_new = getDistanceValue(distanceMM);
+		if(ISeeObject_new <= ISeeObject) {ISeeObject = ISeeObject_new;} // while distance is decreasing - keep moving forward
+		else //  Losing object, search for it again
+    {
+    	 // stop motors
+    	 setMotorSpeed(leftMotor, 0);
+ 	     setMotorSpeed(rightMotor, 0);
+ 	     // TODO: - if distance increases (lost target) stop and aquire target again
+ 	   }
 	}
-	// Sees object, Stop motors
+	// Has reached object, Stop motors
 
-	// Stop motors
   setMotorSpeed(leftMotor, 0);
 	setMotorSpeed(rightMotor, 0);
 	ISeeColor= getColorHue(colorDetector);
